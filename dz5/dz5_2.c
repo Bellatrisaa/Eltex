@@ -28,7 +28,6 @@ int main(void)
     printf("Written: %s\n", str);
 
     char str_buf[16];
-
     memset(str_buf, 0, sizeof(str_buf));
 
     for(int i = len - 1; i >= 0; i--){
