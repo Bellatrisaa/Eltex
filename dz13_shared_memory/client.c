@@ -64,12 +64,16 @@ int main(int argc, char* argv[])
        perror("shm_open");
       SignalHandler(0);
     }
- 
+
+    printf("Client: Shared memory opened\n");
+
     if ((sh_mem_ptr = mmap(NULL, sizeof(struct sh_mem), PROT_READ | PROT_WRITE, MAP_SHARED,
             shmid, 0)) == MAP_FAILED){
        perror("mmap");
        SignalHandler(0);
     }
+
+    printf ("Client: Shared memory ptr opened\n");
 
     if ((sem_clients = sem_open(SEM_CLIENTS_NAME, 0, 0, 0)) == SEM_FAILED){
         perror("sem_open 1");
@@ -85,6 +89,8 @@ int main(int argc, char* argv[])
         perror("sem_open 2");
 	SignalHandler(0);
     }
+
+    printf ("Client: Semaphores created.\n");
 
     char message[MAX_MSG_SIZE];
 

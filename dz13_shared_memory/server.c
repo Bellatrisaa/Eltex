@@ -28,31 +28,34 @@ struct sh_mem {
     int msg_id;
 };
 
-struct sh_mem *sh_mem_ptr;
+struct sh_mem *sh_mem_ptr = NULL;
+
+sem_t *sem_clients = NULL, *sem_msg = NULL;
 
 void SignalHandler(int sig)
 {
-    if (munmap(sh_mem_ptr, sizeof (struct sh_mem)) == -1){
+    if (munmap(sh_mem_ptr, sizeof (struct sh_mem)) == -1)
        perror ("munmap");
-       exit(1);
-    }
 
     printf("Server: Memory unmapped\n");
 
-    if (shm_unlink(PATHNAME) == -1){
+    if (shm_unlink(PATHNAME) == -1)
         perror("memory unlink");
-    }
-
+    
     printf("Server: Memory object is deleted\n");
 
-    if (sem_unlink(SEM_MSGS_NAME) == -1){
+    if (sem_close(sem_msg) == -1)
+        perror("sem close 1");
+
+    if (sem_close(sem_clients) == -1)
+        perror("sem close 2");
+
+    if (sem_unlink(SEM_MSGS_NAME) == -1)
         perror("sem unlink 1");
-	exit(1);
-    }
-    if (sem_unlink(SEM_CLIENTS_NAME) == -1){
+
+    if (sem_unlink(SEM_CLIENTS_NAME) == -1)
         perror("sem unlink 2");
-	exit(1);
-    }
+	
     printf("Server: Semaphores are deleted\n");
     signal(sig, SIG_DFL);
     exit(0);
@@ -62,26 +65,24 @@ int main(void)
 {
     signal(SIGINT, SignalHandler);
     int shmid; 
-    sem_t *sem_clients, *sem_msg;
     int clients_id = 1; 
 
     if ((shmid = shm_open(PATHNAME, O_RDWR | O_CREAT | O_EXCL, IPC_PARAM)) == -1){
        perror("shm_open");
        SignalHandler(0);
-       exit(1);
     }
 
     printf ("Server: Shared memory created.\n");
 
       if (ftruncate(shmid, sizeof (struct sh_mem)) == -1){
        perror("ftruncate");
-       exit(1);
+       SignalHandler(0);
       }
 
     if ((sh_mem_ptr = mmap(NULL, sizeof(struct sh_mem), PROT_READ | PROT_WRITE, MAP_SHARED,
        shmid, 0)) == MAP_FAILED){
        perror("mmap");
-       exit(1);
+       SignalHandler(0);
     }
 
     sh_mem_ptr->name_id = sh_mem_ptr->msg_id = 0;
@@ -90,12 +91,12 @@ int main(void)
 
     if ((sem_clients = sem_open(SEM_CLIENTS_NAME, O_CREAT | O_EXCL, 0660, MAX_CLIENTS)) == SEM_FAILED){
         perror("sem_open 1");
-	exit(1);
+	SignalHandler(0);
     }
 
     if ((sem_msg = sem_open(SEM_MSGS_NAME, O_CREAT | O_EXCL, 0660, 1)) == SEM_FAILED){
         perror("sem_open 2");
-	exit(1);
+	SignalHandler(0);
     }
 
     printf ("Server: Semaphores created.\n");
