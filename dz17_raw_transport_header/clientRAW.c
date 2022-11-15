@@ -48,10 +48,9 @@ int main(int argc, char *argv[])
 
     while(1){
 	int n = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *) &server_addr, &server_addr_size);
-	udph = (struct udphdr *) buf;
+	udph = (struct udphdr *) (buf + 20);
 
-        if (n != -1 && ntohs(udph->dest) == 1052)  break; // ==7777
-	//Always returns port 1052 if the packet came from the correct server. So I haven't figured out how to fix it.
+        if (n != -1 && ntohs(udph->dest) == 7777)  break;
     }
         printf("dest: %d\n", ntohs(udph->dest));
         printf("msg: %s\n", buf + 28);
