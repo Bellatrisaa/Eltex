@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     memset(&addr_ll, 0, sizeof(struct sockaddr_ll));
                         
     addr_ll.sll_family = htons(AF_PACKET);
-    addr_ll.sll_ifindex = htonl(1);
+    addr_ll.sll_ifindex = htonl(if_nametoindex("wlp2s0"));
     addr_ll.sll_halen = htons(6);
     addr_ll.sll_protocol = htons(ETHERTYPE_IP);
 
