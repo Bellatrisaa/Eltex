@@ -16,10 +16,7 @@
 
 
 #define MY_IP "192.168.0.107"
-#define MY_MAC "5c:87:9c:f5:b2:7f" //48:2a:e3:58:be:50
-
-//#define SERVER_IP "192.168.0.102"
-//#define SERVER_MAC "50:E5:49:E3:8A:48"
+#define MY_MAC "5c:87:9c:f5:b2:7f"
 
 #define SERVER_IP "192.168.0.107"
 #define SERVER_MAC "5c:87:9c:f5:b2:7f"
@@ -55,8 +52,8 @@ int main(int argc, char *argv[])
     memset(&addr_ll, 0, sizeof(struct sockaddr_ll));
                         
     addr_ll.sll_family = htons(AF_PACKET);
-    addr_ll.sll_ifindex = htonl(if_nametoindex("wlp2s0"));
-    addr_ll.sll_halen = htonl(6);
+    addr_ll.sll_ifindex = if_nametoindex("wlp2s0");
+    addr_ll.sll_halen = 6;
     addr_ll.sll_protocol = htons(ETH_P_IP);
 
     char datagram[1024];
@@ -73,25 +70,6 @@ int main(int argc, char *argv[])
     memset (ethh, 0, sizeof(struct ethhdr));
     memset (iph, 0, sizeof(struct iphdr));
     memset (udph, 0, sizeof(struct udphdr));
-
-    /*
-    struct ether_addr *eth_addr;
-    eth_addr = ether_aton(SERVER_MAC);
-
-    for (int i = 0; i < ETH_ALEN; i++){
-	addr_ll.sll_addr[i] = eth_addr->ether_addr_octet[i];
-    }
-
-    for (int i = 0; i < ETH_ALEN; i++)
-	ethh->ether_dhost[i] = eth_addr->ether_addr_octet[i];
-
-    eth_addr = ether_aton(MY_MAC);
-
-    for (int i = 0; i < ETH_ALEN; i++)
-	ethh->ether_shost[i] = eth_addr->ether_addr_octet[i];
-
-    ethh->ether_type = htons(ETHERTYPE_IP);
-    */
 
     memcpy(ethh->h_source, ether_aton(MY_MAC), 6);
     memcpy(ethh->h_dest, ether_aton(SERVER_MAC), 6);
@@ -116,11 +94,22 @@ int main(int argc, char *argv[])
     memcpy(addr_ll.sll_addr, ethh->h_dest, 6);
 
     iph->check = csum(iph);
+    /*
+	printf("Address:\n");
+	printf("addr_ll.sll_family: %X\n", addr_ll.sll_family);
+	printf("addr_ll.sll_ifindex: %X\n", addr_ll.sll_ifindex);
+	printf("addr_ll.sll_halen: %X\n", addr_ll.sll_halen);
+	printf("addr_ll.sll_protocol: %X\n", addr_ll.sll_protocol);
+	printf("addr_ll.sll_addr: ");
+	for (int i = 0; i < ETH_ALEN; i++)
+		printf("%X", addr_ll.sll_addr[i]);
+	printf("\n");
+    */
 
-    // recvfrom(fd, datagram, strlen(datagram), 0, (struct sockaddr *) &addr_ll, &addrlen);
+    int packet_size = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(msg);
 
     while(1){
-	int n = sendto(fd, datagram, strlen(datagram), 0, (struct sockaddr *) &addr_ll,  addrlen);
+	int n = sendto(fd, datagram, packet_size, 0, (struct sockaddr *) &addr_ll,  addrlen);
 	if(n < 0) handle_error("sendto");
 	sleep(2);
     }
